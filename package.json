@@ -1,0 +1,16 @@
+{
+  "name": "nodedrawingboard",
+  "version": "0.0.1",
+  "description": "a simple drawing board using node",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "ubuntugx",
+  "license": "ISC",
+  "dependencies": {
+    "connect-multiparty": "^2.0.0",
+    "express": "^4.13.4",
+    "opencv": "^5.0.0"
+  }
+}
