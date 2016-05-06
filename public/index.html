@@ -6,18 +6,18 @@
     <title>绘画板</title>
     <link rel="stylesheet" href="css/global.css" />
     <link rel="stylesheet" href="css/myStyle.css" />
+    <link rel="stylesheet" href="css/jquery.Jcrop.css" />
 </head>
 <body>
 <div class="container">
     <div id="content">
       <form id="formUploadFile" action='javascript:;' method="post" enctype='multipart/form-data'>
-          <input type="file" id="fileInput" name="files" />
+          <input type="file" id="fileInput" name="files" accept="image/*" style="display: none"/>
           <!-- <button id="fileBtn" onClick="uploadfile()">新建任务</button> -->
       </form>
-      <!-- <div class="canvas-wrapper">
-          <canvas id="canvas"><p>Your browser doesn't support canvas.</p></canvas> -->
-          <!-- <input type="file" accept="image/*" id="fileInput" multiple style="display: none"/>
-      </div> -->
+      <div class="canvas-wrapper" style="z-index: -1">
+          <canvas id="canvas"><p>Your browser doesn't support canvas.</p></canvas>
+      </div>
     </div>
     <div id="toolbar">
         <div class="menu">
@@ -126,6 +126,7 @@
 <script src="js/lib/jquery-1.12.0.min.js"></script>
 <script src="js/lib/google.fastbutton.min.js"></script>
 <script src="js/lib/google.jquery.fastbutton.min.js"></script>
+<script src="js/lib/jquery.Jcrop.js"></script>
 <script src="js/myScript.js"></script>
 <!-- <script src="js/testScript.js"></script> -->
 </body>
