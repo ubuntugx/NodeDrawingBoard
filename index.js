@@ -3,6 +3,8 @@ var express = require('express')
   , fs = require('fs')
   , path = require('path')
   , cv = require('opencv')
+  , PythonShell = require('python-shell')
+  , bodyParser = require('body-parser')
   , multipart = require('connect-multiparty');
 
 var app = express();
@@ -11,32 +13,55 @@ var app = express();
 app.use(express.static('./public'));
 // morgan 是一个 node.js 关于 http 请求的日志中间件，默认的格式是 dev
 app.use(morgan('dev'));
+// app.use(bodyParser.urlencoded({
+//     extended: false
+// }));
+// app.use(bodyParser.json());
+
 // 在给定主机和端口上监听请求
 app.listen(process.env.PORT || 3000);
 console.log('Node.js Ajax Upload File running at: http://0.0.0.0:3000');
 // app.post(path, callback[, callback...])
 app.post('/upload', multipart(), function(req, res){
   //get filename
-  var filename = req.files.files.originalFilename || path.basename(req.files.files.path);
+  console.log(req);
+
+  var filename = req.files.imageFile.originalFilename || path.basename(req.files.imageFile.path);
+
+  var args = req.body;
+  console.log(args.x1+" "+args.y1);
+
   //copy file to a public directory
   var targetPath = path.dirname(__filename) + '/public/' + filename;
   //copy file
-  console.log(req.files.files);
-  fs.createReadStream(req.files.files.path).pipe(fs.createWriteStream(targetPath));
 
-  cv.readImage(targetPath, function(err, im){
-    console.log(cv.FACE_CASCADE);
-    console.log(targetPath);
-  im.detectObject(cv.FACE_CASCADE, {}, function(err, faces){
-    for (var i=0;i<faces.length; i++){
-      var x = faces[i]
-      im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
+  fs.createReadStream(req.files.imageFile.path).pipe(fs.createWriteStream(targetPath));
+
+  var shell = new PythonShell('test.py', { mode: 'json'});
+  shell.send(
+    {
+      "path": './public/'+filename,
+      "args": [~~args.x1, ~~args.y1, ~~args.w, ~~args.h]
     }
-    im.save('./out.jpg');
+  );
+
+  shell.on('message', function (message) {
+    // 异步处理！！！
+    // fs.createReadStream(req.files.files.path).pipe(fs.createWriteStream(targetPath));
+
+    // received a message sent from the Python script (a simple "print" statement)
+    console.log(message);
   });
-})
+
+  // end the input stream and allow the process to exit
+  shell.end(function (err) {
+    if (err) throw err;
+    res.json({code: 200, msg: {url: 'http://' + req.headers.host + '/' + filename}});
+    console.log('finished');
+  });
+
   //return file url
-  res.json({code: 200, msg: {url: 'http://' + req.headers.host + '/' + filename}});
+  // res.json({code: 200, msg: {url: targetPath}});
 });
 
 app.get('/env', function(req, res){
