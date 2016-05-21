@@ -2,7 +2,6 @@ var express = require('express')
   , morgan = require('morgan')
   , fs = require('fs')
   , path = require('path')
-  , cv = require('opencv')
   , PythonShell = require('python-shell')
   , bodyParser = require('body-parser')
   , multipart = require('connect-multiparty');
@@ -24,24 +23,28 @@ console.log('Node.js Ajax Upload File running at: http://0.0.0.0:3000');
 // app.post(path, callback[, callback...])
 app.post('/upload', multipart(), function(req, res){
   //get filename
-  console.log(req);
+  // console.log(req);
 
   var filename = req.files.imageFile.originalFilename || path.basename(req.files.imageFile.path);
 
   var args = req.body;
-  console.log(args.x1+" "+args.y1);
+  // console.log(args.x1+" "+args.y1);
 
   //copy file to a public directory
-  var targetPath = path.dirname(__filename) + '/public/' + filename;
+  var handleFileName = filename.substring(filename.lastIndexOf('/'), filename.lastIndexOf('.')) + '.png';
+  console.log(handleFileName);
+  var targetPath = path.dirname(__filename) + '/public/uploadImages/' + handleFileName;
+  console.log(targetPath);
   //copy file
-
+  // fs.createReadStream(req.files.imageFile.path).pipe(fs.createWriteStream());
   fs.createReadStream(req.files.imageFile.path).pipe(fs.createWriteStream(targetPath));
-
+  // console.log(imageFileName);
   var shell = new PythonShell('test.py', { mode: 'json'});
   shell.send(
     {
-      "path": './public/'+filename,
-      "args": [~~args.x1, ~~args.y1, ~~args.w, ~~args.h]
+      "path": './public/uploadImages/'+handleFileName,
+      "args": [~~args.x1, ~~args.y1, ~~args.w, ~~args.h],
+      "handleFileName": handleFileName
     }
   );
 
@@ -56,7 +59,8 @@ app.post('/upload', multipart(), function(req, res){
   // end the input stream and allow the process to exit
   shell.end(function (err) {
     if (err) throw err;
-    res.json({code: 200, msg: {url: 'http://' + req.headers.host + '/' + filename}});
+    // fs.createReadStream(req.files.imageFile.path).pipe(fs.createWriteStream(targetPath));
+    res.json({code: 200, msg: {url: 'http://' + req.headers.host + '/uploadImages/' + handleFileName}});
     console.log('finished');
   });
 

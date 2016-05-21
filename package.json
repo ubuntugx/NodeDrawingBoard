@@ -9,8 +9,10 @@
   "author": "ubuntugx",
   "license": "ISC",
   "dependencies": {
+    "body-parser": "^1.15.0",
     "connect-multiparty": "^2.0.0",
     "express": "^4.13.4",
-    "opencv": "^5.0.0"
+    "morgan": "^1.7.0",
+    "python-shell": "^0.4.0"
   }
 }
