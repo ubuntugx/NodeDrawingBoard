@@ -9,6 +9,7 @@
     var imgObjArr = []; // 上传图片数组
     var startDraw = true; // 是否开始画图
     var isEraser = false; // 橡皮
+    var isTextArea = false;
     var $imagesEffect = $(".imagesEffect");  // 图片特效图标
 
     // canvas 部分
@@ -28,6 +29,9 @@
     }; // 初始移动后位置 0 0
     //document.body.classList.add('pointer');             // html5 新特性，加一个类，对应 jQuery 中的 addClass
 
+    // 记录历史
+    var historyArray = new Array();
+    var step = -1;
     if (canvas.getContext) {
         // 判断浏览器是否支持 canvas
         context = canvas.getContext("2d");
@@ -102,7 +106,36 @@
         }
 
         function mouseup() {
+            // context.save();  // save 保存的是画笔当前的状态，粗细大小，和画布的旋转等，不是画的线
+            historyPush();
             mouse.down = false;
+        }
+    }
+
+    function historyPush() {
+        step++;
+        historyArray.push(canvas.toDataURL("image/png"));
+        console.log(historyArray);
+    }
+
+    function undo() {
+        if(historyArray.length > 0){
+            step--;
+            var tempImage = new Image();
+            historyArray.pop();
+            if(step < 0){
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
+            tempImage.src = historyArray[step];
+            console.log(historyArray);
+            console.log(tempImage);
+            console.log(canvas.width);
+            // context.fillText('happy', 20, 20);
+            tempImage.onload = function() {
+              context.clearRect(0, 0, canvas.width, canvas.height);
+              context.drawImage(tempImage, 0, 0);
+            }
         }
     }
 
@@ -132,14 +165,15 @@
         handleImage = document.createElement('div');
         handleImage.classList.add('handleImage');
         canvasWrapper.appendChild(handleImage);
-        handleImage.addEventListener("mousedown", imgOnMouseDown, false);
-        handleImage.addEventListener("mousemove", imgOnMouseMove, false);
-        handleImage.addEventListener("mouseup", imgOnMouseUp, false);
+        handleImage.addEventListener("mousedown", onMouseDown, false);
+        handleImage.addEventListener("mousemove", onMouseMove, false);
+        handleImage.addEventListener("mouseup", onMouseUp, false);
 
         imageFigure = document.createElement('figure');
         handleImage.appendChild(imageFigure);
 
         img = document.createElement('img');
+        img.style.cursor = 'move';
         img.classList.add('theImage');
         img.file = file;
         imageFigure.appendChild(img);
@@ -185,9 +219,12 @@
 
     var disX = 0;
     var disY = 0;
-    function imgOnMouseDown(event) {
-      event.preventDefault();
-      console.log("enter img mousedown");
+    function onMouseDown(event) {
+      console.log(this.nodeName);
+      if(this.nodeName !== 'TEXTAREA'){
+        console.log('enter')
+        event.preventDefault();
+      }
       mouse.down = true;
       position.x = event.clientX;
       position.y = event.clientY;
@@ -195,18 +232,10 @@
       disY = position.y - this.offsetTop;     //鼠标纵坐标点到div的offsetTop距离
     }
 
-    function imgOnMouseMove(event) {
-      console.log("enter img mousemove")
+    function onMouseMove(event) {
       mouse.x = event.clientX;
       mouse.y = event.clientY;
       if(mouse.down){
-
-        // console.log("left: " + this.style.left + ",top: " + this.style.top);
-        // console.log("positionX: " + position.x +",positionY: " + position.y);
-        // console.log("moveLeft: " + moveLeft + ",moveTop: " +moveTop);
-
-        // this.style.left = position.x + moveLeft + "px";
-        // this.style.top = position.y + moveTop + "px";
         this.style.left = position.x - disX  + "px";
         this.style.top = position.y - disY  + "px";
         position.x = mouse.x;
@@ -214,11 +243,11 @@
       }
     }
 
-    function imgOnMouseUp(event){
-      console.log("enter img mouseup")
+    function onMouseUp(event){
       mouse.down = false;
     }
 
+    // 点击完成按钮
     function imageChosenBtnClick(){
       // console.log(handleImage.offsetLeft);
       // console.log(imageFigure.outerHTML);
@@ -249,6 +278,7 @@
       //   console.log(handleImage.offsetLeft);
       //   context.drawImage(renderResult.image, handleImage.offsetLeft, handleImage.offsetTop);
       // });
+      historyPush();
       canvasWrapper.removeChild(handleImage);
     }
 
@@ -259,6 +289,7 @@
     var jcrop_api;
     var chosenBtn;
     var cancelBtn;
+    var textArea;
     // 点击前景提取按钮
     function croppingBtnClick(file) {
       $('.theImage').Jcrop({
@@ -367,9 +398,54 @@
       handleImage.removeChild(cancelBtn);
     }
 
-    function handleTextArea() {
+    function onKeydown(event){
+      if(event.keyCode === 13){
+        console.log($chosenSvg.getBoundingClientRect().width*1.2);
+        event.preventDefault();
+        event.returnValue = false;
+        context.font = this.style.fontSize + " " + this.style.fontFamily;
+        context.fillStyle = this.style.color;
+        // TODO 位置 top 的计算方法不对
+        context.fillText(this.value, this.offsetLeft,  this.offsetTop + $chosenSvg.getBoundingClientRect().width);
 
+        canvasWrapper.removeChild(textArea);
+        canvas.addEventListener("click", click, false);
+      }
     }
+
+    function click(){
+      isTextArea = true;
+      textArea = document.createElement('textarea');
+      canvasWrapper.appendChild(textArea);
+      textArea.classList.add("textArea");
+      textArea.setAttribute("placeholder", "在这里写下文字...")
+      textArea.setAttribute("rows", "1")
+      textArea.setAttribute("autofocus", true);
+
+      textArea.style.left = event.clientX - $offest.left + "px";
+      textArea.style.top = event.clientY - $offest.top + "px";
+      textArea.style.fontSize = $chosenSvg.getBoundingClientRect().width + "px";
+      textArea.style.lineHeight = "1.2em";
+      console.log(textArea.style.lineHeight)
+      textArea.style.fontFamily = 'Comic Sans MS, serif';
+      textArea.style.color = $colorItem.css("background-color");
+
+      textArea.addEventListener("mousedown", onMouseDown, false);
+      textArea.addEventListener("mousemove", onMouseMove, false);
+      textArea.addEventListener("mouseup", onMouseUp, false);
+      textArea.addEventListener("keydown", onKeydown, false);
+      canvas.removeEventListener("click", click, false);
+      // console.log($offest.top)
+      // console.log(textArea.style.top)
+    }
+
+    var $download = $("#download");
+
+    $download.fastClick(function(){
+        this.href = canvas.toDataURL("image/png");
+        this.download = 'drawingBoard.png';
+    });
+
     $subMenuItem.fastClick(function() {
         var that = $(this); // 当前子菜单项
         var $MenuItem = that.parents(".modal-indicator"); // 当前父菜单项
@@ -377,17 +453,28 @@
             // 更改颜色为子菜单选中颜色
             $MenuItem.css("background-color", that.children().css("background-color"));
             // size 部分也可以只改变类名，不复制全部的 html
+            if(isTextArea === true){
+                textArea.style.color = that.children().css("background-color");
+            }
         } else if ($MenuItem.hasClass("sizes")) {
             $MenuItem.children("div:first-child")
                 .attr("class", "")
                 .addClass(that.find("div:first-child").attr("class"));
-        } else if ($MenuItem.hasClass("imagesEffect")) {
-            var $chosenEffect = $MenuItem.children("figure:first-child");
-                $chosenEffect.attr("class", "")
-                             .addClass(that.find("figure:first-child").attr("class"));
-                imageFigure.className = "";
-                imageFigure.classList.add($chosenEffect.attr("class"));
-        } else {
+            if(isTextArea === true){
+                textArea.style.fontSize = $chosenSvg.getBoundingClientRect().width + "px";
+                // textArea.style.lineHeight = $chosenSvg.getBoundingClientRect().width + "px";
+            }
+        } else if($MenuItem.hasClass("lines")){
+            $MenuItem.children("div:first-child").html(that.html());
+        }
+        // else if ($MenuItem.hasClass("imagesEffect")) {
+        //     var $chosenEffect = $MenuItem.children("figure:first-child");
+        //         $chosenEffect.attr("class", "")
+        //                      .addClass(that.find("figure:first-child").attr("class"));
+        //         imageFigure.className = "";
+        //         imageFigure.classList.add($chosenEffect.attr("class"));
+        // }
+        else {
             console.log("第几个元素：" + that.index());
             var toolsIndex = that.index();
             if (toolsIndex < 4) {
@@ -400,8 +487,10 @@
                     canvas.addEventListener("mousedown", mousedown, false);
                     canvas.addEventListener("mousemove", mousemove, false);
                     canvas.addEventListener("mouseup", mouseup, false);
+                    canvas.removeEventListener("click", click, false);
                     isEraser = false;
                     startDraw = true;
+                    isTextArea = false;
                     break;
                 case 1:
                     // 橡皮
@@ -409,18 +498,20 @@
                     canvas.addEventListener("mousedown", mousedown, false);
                     canvas.addEventListener("mousemove", mousemove, false);
                     canvas.addEventListener("mouseup", mouseup, false);
+                    canvas.removeEventListener("click", click, false);
                     isEraser = true;
                     startDraw = true;
+                    isTextArea = false;
                     break;
                 case 2:
                     // 文字
                     document.body.classList.remove('crosshair');
+                    canvas.addEventListener("click", click, false);
                     canvas.removeEventListener("mousedown", mousedown, false);
                     canvas.removeEventListener("mousemove", mousemove, false);
                     canvas.removeEventListener("mouseup", mouseup, false);
                     isEraser = false;
                     startDraw = false;
-                    handleTextArea();
                     break;
                 case 3:
                     // 图片
@@ -428,15 +519,21 @@
                     canvas.removeEventListener("mousedown", mousedown, false);
                     canvas.removeEventListener("mousemove", mousemove, false);
                     canvas.removeEventListener("mouseup", mouseup, false);
+                    canvas.removeEventListener("click", click, false);
                     isEraser = false;
                     startDraw = false;
+                    isTextArea = false;
                     fileInput.click();
                     break;
                 case 4:
                     // 撤销
+                    undo();
                     break;
                 case 5:
                     // 删除
+                    historyArray = [];
+                    step = -1;
+                    context.clearRect(0, 0, canvas.width, canvas.height);
                     break;
                 default:
                     break;

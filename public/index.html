@@ -16,8 +16,8 @@
           <input type="file" id="fileInput" name="files" accept="image/*" style="display: none"/>
           <!-- <button id="fileBtn" onClick="uploadfile()">新建任务</button> -->
       </form>
-      <div class="canvas-wrapper" style="z-index: -1">
-          <canvas id="canvas"><p>Your browser doesn't support canvas.</p></canvas>
+      <div class="canvas-wrapper">
+          <canvas id="canvas" style="z-index: -1"><p>Your browser doesn't support canvas.</p></canvas>
       </div>
     </div>
     <div id="toolbar">
@@ -121,7 +121,7 @@
                     </div>
                 </div>
             </div>
-            <div class="imagesEffect menu-item modal-indicator" style="display: none">
+            <!-- <div class="imagesEffect menu-item modal-indicator" style="display: none">
               <figure>
                   <img />
               </figure>
@@ -137,6 +137,40 @@
                     <div class="menu-item"><figure class="slumber"><img src="../uploadImages/pinarbudin_1.jpg" alt="slumber"  title="slumber"/></figure></div>
                     <div class="menu-item"><figure class="xpro2"><img src="../uploadImages/pinarbudin_1.jpg"alt="xpro2" title="xpro2"/></figure></div>
                 </div>
+            </div> -->
+            <div class="lines menu-item modal-indicator">
+                <div>
+                    <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M0 12 Q 6 0, 12 12 T 24 12" fill="none" stroke="#3e3e3e" stroke-width="1.2"/>
+                    </svg>
+                </div>
+                <div class="sub-menu col-4">
+                   <div class="menu-item">
+                       <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+                           <path d="M0 12 Q 6 0, 12 12 T 24 12" fill="none" stroke="#EEEEEE" stroke-width="1.2"/>
+                       </svg>
+                   </div>
+                   <div class="menu-item">
+                       <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+                           <line x1="0" x2="24" y1="0" y2="24" stroke="#EEEEEE" fill="#3e3e3e" stroke-width="1.2"/>
+                       </svg>
+                   </div>
+                    <div class="menu-item">
+                        <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+                          <rect x="0" y="0" width="23.6" height="23.6" stroke="#EEEEEE" fill="#3e3e3e" stroke-width="1.2"/>
+                        </svg>
+                    </div>
+                    <div class="menu-item">
+                        <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="11.6" stroke="#EEEEEE" fill="#3e3e3e" stroke-width="1.2"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            <div class="save menu-item modal-indicator">
+              <div>
+                  <a id=""><img src="./images/save.png"/></a>
+              </div>
             </div>
         </div>
     </div>
