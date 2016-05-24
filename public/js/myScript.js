@@ -7,9 +7,16 @@
     var fileInput = document.getElementById("fileInput");
     var content = document.getElementById("content");
     var imgObjArr = []; // 上传图片数组
-    var startDraw = true; // 是否开始画图
-    var isEraser = false; // 橡皮
-    var isTextArea = false;
+    var actionType = {
+      brush: 'brush',
+      eraser: 'eraser',
+      textarea: 'textarea',
+      image: 'image',
+      line: 'line',
+      rect: 'rect',
+      circle: "circle",
+    }
+    var curActionType = actionType.brush;
     var $imagesEffect = $(".imagesEffect");  // 图片特效图标
 
     // canvas 部分
@@ -66,22 +73,43 @@
         var docScrollTop = document.documentElement.scrollTop;
         var moveLeft = docScrollLeft - $offest.left; // 最终偏移x
         var moveTop = docScrollTop - $offest.top; // 最终偏移y
+        var rectWrapper, circleWrapper;
 
         function draw() {
             if (mouse.down) {
                 var d = distance(position, mouse);
                 if (d >= 1) {
-                    context.beginPath();
-                    context.lineCap = "round";
-                    context.strokeStyle = isEraser ? '#FFF' : $colorItem.css("background-color");
-                    //console.log(chosenSvg.getBoundingClientRect().width);
-                    context.lineWidth = chosenWidth;
-                    context.moveTo(position.x + moveLeft, position.y + moveTop);
-                    context.lineTo(mouse.x + moveLeft, mouse.y + moveTop);
-                    context.stroke();
-                    context.closePath();
-                    position.x = mouse.x;
-                    position.y = mouse.y;
+                    switch (curActionType) {
+                      case actionType.line:
+                        // 直线
+                        break;
+                      case actionType.rect:
+                         // 正方形
+                        rectWrapper.style.width = mouse.x - position.x + "px";
+                        rectWrapper.style.height = mouse.y - position.y + "px";
+                        break;
+                      case actionType.circle:
+                        // 圆
+                        circleWrapper.style.width = mouse.x - position.x + "px";
+                        circleWrapper.style.height = mouse.x - position.x + "px";
+                        circleWrapper.style.borderRadius = mouse.x - position.x / 2 + "px";
+                        // console.log(circleWrapper.style.borderRadius);
+                        break;
+                      default:
+                        // 画笔或橡皮
+                        context.beginPath();
+                        context.lineCap = "round";
+                        context.strokeStyle = (curActionType === actionType.eraser) ? '#FFF' : $colorItem.css("background-color");
+                        //console.log(chosenSvg.getBoundingClientRect().width);
+                        context.lineWidth = chosenWidth;
+                        context.moveTo(position.x + moveLeft, position.y + moveTop);
+                        context.lineTo(mouse.x + moveLeft, mouse.y + moveTop);
+                        context.stroke();
+                        context.closePath();
+                        position.x = mouse.x;
+                        position.y = mouse.y;
+                        break;
+                    }
                 }
             }
         }
@@ -98,16 +126,68 @@
             position.x = event.clientX;
             position.y = event.clientY;
             chosenWidth = $chosenSvg.getBoundingClientRect().width;
-            context.beginPath();
-            context.fillStyle = $colorItem.css("background-color"); // 合并！
-            context.arc(position.x + moveLeft, position.y + moveTop, chosenWidth / 2, 0, 2 * Math.PI);
-            context.fill();
-            context.closePath();
+            console.log(chosenWidth);
+            switch (curActionType) {
+              case actionType.rect:
+                rectWrapper = document.createElement("div");
+                canvasWrapper.appendChild(rectWrapper);
+                rectWrapper.style.position = "absolute";
+                rectWrapper.style.left = position.x + moveLeft + "px";
+                rectWrapper.style.top = position.y + moveTop + "px";
+                rectWrapper.classList.add("rectWrapper");
+                rectWrapper.style.borderColor = $colorItem.css("background-color");
+                rectWrapper.style.borderWidth = chosenWidth + "px";
+                // rectWrapper.style.borderRadius = chosenWidth / 2 + "px";
+                rectWrapper.style.borderStyle = "solid";
+                rectWrapper.style.width = 0;
+                rectWrapper.style.height = 0;
+                break;
+              case actionType.circle:
+                circleWrapper = document.createElement("div");
+                canvasWrapper.appendChild(circleWrapper);
+                circleWrapper.style.position = "absolute";
+                circleWrapper.style.left = position.x + moveLeft + "px";
+                circleWrapper.style.top = position.y + moveTop + "px";
+                circleWrapper.classList.add("circleWrapper");
+                circleWrapper.style.borderColor = $colorItem.css("background-color");
+                circleWrapper.style.borderWidth = chosenWidth + "px";
+                circleWrapper.style.borderStyle = "solid";
+                circleWrapper.style.borderRadius = chosenWidth + "px";
+                circleWrapper.style.width = 0;
+                circleWrapper.style.height = 0;
+                break;
+              default:
+                context.beginPath();
+                context.fillStyle = $colorItem.css("background-color"); // 合并！
+                context.arc(position.x + moveLeft, position.y + moveTop, chosenWidth / 2, 0, 2 * Math.PI);
+                context.fill();
+                context.closePath();
+                break;
+            }
         }
 
         function mouseup() {
             // context.save();  // save 保存的是画笔当前的状态，粗细大小，和画布的旋转等，不是画的线
             historyPush();
+            switch (curActionType) {
+              case actionType.rect:
+                var rectStyle = rectWrapper.style;
+                var halfWidth = parseFloat(rectStyle.borderWidth,10)/2;
+                context.beginPath();
+                context.lineWidth = parseFloat(rectStyle.borderWidth,10);
+                context.strokeStyle = rectStyle.borderColor;
+                context.rect(parseFloat(rectStyle.left,10) + halfWidth, parseFloat(rectStyle.top,10) + halfWidth, parseFloat(rectStyle.width,10)-halfWidth*2, parseFloat(rectStyle.height,10)-halfWidth*2);
+                context.stroke();
+                context.closePath();
+                canvasWrapper.removeChild(rectWrapper);
+                break;
+              case actionType.circle:
+
+                break;
+              default:
+
+                break;
+            }
             mouse.down = false;
         }
     }
@@ -407,14 +487,13 @@
         context.fillStyle = this.style.color;
         // TODO 位置 top 的计算方法不对
         context.fillText(this.value, this.offsetLeft,  this.offsetTop + $chosenSvg.getBoundingClientRect().width);
-
+        historyPush();
         canvasWrapper.removeChild(textArea);
         canvas.addEventListener("click", click, false);
       }
     }
 
     function click(){
-      isTextArea = true;
       textArea = document.createElement('textarea');
       canvasWrapper.appendChild(textArea);
       textArea.classList.add("textArea");
@@ -435,8 +514,6 @@
       textArea.addEventListener("mouseup", onMouseUp, false);
       textArea.addEventListener("keydown", onKeydown, false);
       canvas.removeEventListener("click", click, false);
-      // console.log($offest.top)
-      // console.log(textArea.style.top)
     }
 
     var $download = $("#download");
@@ -453,19 +530,44 @@
             // 更改颜色为子菜单选中颜色
             $MenuItem.css("background-color", that.children().css("background-color"));
             // size 部分也可以只改变类名，不复制全部的 html
-            if(isTextArea === true){
+            if(curActionType === actionType.textarea){
                 textArea.style.color = that.children().css("background-color");
             }
         } else if ($MenuItem.hasClass("sizes")) {
             $MenuItem.children("div:first-child")
                 .attr("class", "")
                 .addClass(that.find("div:first-child").attr("class"));
-            if(isTextArea === true){
+            if(curActionType === actionType.textarea){
                 textArea.style.fontSize = $chosenSvg.getBoundingClientRect().width + "px";
                 // textArea.style.lineHeight = $chosenSvg.getBoundingClientRect().width + "px";
             }
         } else if($MenuItem.hasClass("lines")){
             $MenuItem.children("div:first-child").html(that.html());
+            var toolsIndex = that.index();
+            canvas.addEventListener("mousedown", mousedown, false);
+            canvas.addEventListener("mousemove", mousemove, false);
+            canvas.addEventListener("mouseup", mouseup, false);
+            canvas.removeEventListener("click", click, false);
+            switch (toolsIndex) {
+                case 0:
+                    // 随意线
+                    curActionType = actionType.brush;
+                    break;
+                case 1:
+                    // 直线
+                    curActionType = actionType.line;
+                    break;
+                case 2:
+                    // 矩形
+                    curActionType = actionType.rect;
+                    break;
+                case 3:
+                    // 圆形
+                    curActionType = actionType.circle;
+                    break;
+                default:
+                    break;
+           }
         }
         // else if ($MenuItem.hasClass("imagesEffect")) {
         //     var $chosenEffect = $MenuItem.children("figure:first-child");
@@ -488,9 +590,7 @@
                     canvas.addEventListener("mousemove", mousemove, false);
                     canvas.addEventListener("mouseup", mouseup, false);
                     canvas.removeEventListener("click", click, false);
-                    isEraser = false;
-                    startDraw = true;
-                    isTextArea = false;
+                    curActionType = actionType.brush;
                     break;
                 case 1:
                     // 橡皮
@@ -499,9 +599,7 @@
                     canvas.addEventListener("mousemove", mousemove, false);
                     canvas.addEventListener("mouseup", mouseup, false);
                     canvas.removeEventListener("click", click, false);
-                    isEraser = true;
-                    startDraw = true;
-                    isTextArea = false;
+                    curActionType = actionType.eraser;
                     break;
                 case 2:
                     // 文字
@@ -510,8 +608,7 @@
                     canvas.removeEventListener("mousedown", mousedown, false);
                     canvas.removeEventListener("mousemove", mousemove, false);
                     canvas.removeEventListener("mouseup", mouseup, false);
-                    isEraser = false;
-                    startDraw = false;
+                    curActionType = actionType.textarea;
                     break;
                 case 3:
                     // 图片
@@ -520,9 +617,7 @@
                     canvas.removeEventListener("mousemove", mousemove, false);
                     canvas.removeEventListener("mouseup", mouseup, false);
                     canvas.removeEventListener("click", click, false);
-                    isEraser = false;
-                    startDraw = false;
-                    isTextArea = false;
+                    curActionType = actionType.image;
                     fileInput.click();
                     break;
                 case 4:
