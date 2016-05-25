@@ -190,6 +190,7 @@
 
 #toolbar .menu .lines{
     padding: 18px;
+    display: block;
 }
 
 #toolbar .menu .lines svg{
@@ -209,8 +210,8 @@
     height: 24px;
 }
 
-#toolbar .menu .menu-item .sub-menu.col-4 {
-    width: 240px;
+#toolbar .menu .menu-item .sub-menu.col-3 {
+    width: 180px;
 }
 
 /* 图片处理 */

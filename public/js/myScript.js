@@ -12,12 +12,13 @@
       eraser: 'eraser',
       textarea: 'textarea',
       image: 'image',
-      line: 'line',
+      // line: 'line',
       rect: 'rect',
       circle: "circle",
     }
     var curActionType = actionType.brush;
     var $imagesEffect = $(".imagesEffect");  // 图片特效图标
+    var $linesMenu = $(".lines")[0];
 
     // canvas 部分
     var canvasWrapper = document.getElementsByClassName("canvas-wrapper")[0];
@@ -80,9 +81,6 @@
                 var d = distance(position, mouse);
                 if (d >= 1) {
                     switch (curActionType) {
-                      case actionType.line:
-                        // 直线
-                        break;
                       case actionType.rect:
                          // 正方形
                         rectWrapper.style.width = mouse.x - position.x + "px";
@@ -168,7 +166,6 @@
 
         function mouseup() {
             // context.save();  // save 保存的是画笔当前的状态，粗细大小，和画布的旋转等，不是画的线
-            historyPush();
             switch (curActionType) {
               case actionType.rect:
                 var rectStyle = rectWrapper.style;
@@ -182,12 +179,21 @@
                 canvasWrapper.removeChild(rectWrapper);
                 break;
               case actionType.circle:
-
+                var circleStyle = circleWrapper.style;
+                var halfWidth = parseFloat(circleStyle.width, 10)/2;
+                context.beginPath();
+                context.lineWidth = parseFloat(circleStyle.borderWidth, 10);
+                context.strokeStyle = circleStyle.borderColor;
+                context.arc(parseFloat(circleStyle.left, 10) + halfWidth, parseFloat(circleStyle.top, 10) + halfWidth, parseFloat(circleStyle.width,10) /2 - context.lineWidth / 2, 0, 2 * Math.PI);
+                // context.rect(parseFloat(rectStyle.left,10) + halfWidth, parseFloat(rectStyle.top,10) + halfWidth, parseFloat(rectStyle.width,10)-halfWidth*2, parseFloat(rectStyle.height,10)-halfWidth*2);
+                context.stroke();
+                context.closePath();
+                canvasWrapper.removeChild(circleWrapper);
                 break;
               default:
-
                 break;
             }
+            historyPush();
             mouse.down = false;
         }
     }
@@ -553,15 +559,15 @@
                     // 随意线
                     curActionType = actionType.brush;
                     break;
+                // case 1:
+                //     // 直线
+                //     curActionType = actionType.line;
+                //     break;
                 case 1:
-                    // 直线
-                    curActionType = actionType.line;
-                    break;
-                case 2:
                     // 矩形
                     curActionType = actionType.rect;
                     break;
-                case 3:
+                case 2:
                     // 圆形
                     curActionType = actionType.circle;
                     break;
@@ -633,7 +639,7 @@
                 default:
                     break;
             }
-
+            $linesMenu.style.display = (curActionType === actionType.brush) ? "block" : "none";
         }
         $MenuItem.removeClass("menu-open");
     });
